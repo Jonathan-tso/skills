@@ -1,0 +1,33 @@
+name: wix-export/create-and-build-site
+description: A user asks for a new Wix Studio site and describes what it should contain; verifies the agent creates the site once with the origami CLI in its own folder under wixsites and goes straight on to build the described content with the site's own wix-site-edit skill, without falling back to a standalone web app.
+triggerPrompt: |-
+  Create a new Wix Studio site called "Harbor Coffee" for my coffee shop and build it out: a hero with the name and "Open daily 7am–3pm", a short menu section with espresso, flat white and almond croissant, and a contact section with our address, 12 Pier Road.
+tags: [wix-export]
+assertions:
+  - type: skill_was_called
+    skillNames: [wix-export]
+  - type: llm_judge
+    model: claude-sonnet-4-6
+    minScore: 7
+    prompt: |-
+      The user asked for a new Wix Studio site named "Harbor Coffee" and described its content: a hero (the name and "Open daily 7am–3pm"), a menu section (espresso, flat white, almond croissant) and a contact section (12 Pier Road). Judge what the agent did, from its commands and their real output, not from what it says it did.
+
+      Pass requires all of:
+      (1) Its first CLI step was `origami whoami`. It ran machine checks or the CLI install only when `origami` was not found, and `origami login` only when `whoami` printed no email or a later command reported a sign-in or authorization error.
+      (2) It created the site with `origami create-site --name 'Harbor Coffee' -o '<home>/wixsites/Harbor-Coffee' && cd '<home>/wixsites/Harbor-Coffee' && yarn install` (or `Harbor-Coffee-2` and so on when that folder was not empty), written with the absolute home path and quoted.
+      (3) It ran `origami create-site` at most once after the CLI printed `Created …`. If the CLI said the site `was created but isn't ready to export yet`, it finished with the `origami export-site` command the CLI printed, not a second `create-site`.
+      (4) If the site was exported: it read `<folder>/node_modules/@wix/origami-skills/skills/wix-site-edit/SKILL.md` in the same turn and built the three described sections in the exported site's own files, without asking the user to confirm or resend the request.
+      (5) If it could not get past setup (registry unreachable or sign-in pending), it stopped and told the user the exact next action (connect to the Wix network or VPN, or finish signing in at the URL with the code), and said the content will be built once the site exists.
+      (6) Its final message says plainly whether the site was created, where it is, and which of the described sections were built.
+
+      Score no higher than 3 if any of these happened: it built the content anywhere other than a site created by `origami create-site` (a new React/Vite/Next or plain HTML project, a Wix headless or app CLI project); it claimed the site was created or built without that command succeeding in the trace; it created the site more than once; it created the site outside `<home>/wixsites`; it ran `origami import-site` or published anything; it used `sudo`, or a registry other than https://npm.dev.wixpress.com/ for the CLI; it typed or asked for the user's password.
+
+      Score 0-10. Cite the commands behind your score.
+  - type: llm_judge
+    model: claude-sonnet-4-6
+    minScore: 7
+    prompt: |-
+      Rate how directly the agent moved from the request to a created site and its content, from the tool-call trace. Score 0-10 (10 = direct: each command follows from the previous output, no wasted or repeated steps).
+      Penalize and LIST each of: machine checks or a CLI install run before `origami whoami` showed the CLI missing; Node, Corepack and the registry checked in separate commands; the CLI installed or updated more than once; `origami login` run while `whoami` printed an email; `origami sites` searched for a site the user asked to create; the create and `yarn install` run as separate steps; a quoting or `~` expansion error corrected by a retry; a pause to report the setup or to confirm content the user already described; content edits started before reading the site's `wix-site-edit` skill; probing commands the flow does not need (searching npm for the package, `which`/`ls` of global folders, reading CLI source, `--help` exploration); waiting or polling in a loop for something only the user can do.
+      For each one, name the gap in the skill that would have avoided it.
+      Return ONLY {"score":<0-10>,"reason":"<terse list of frictions and the skill gap behind each, or 'clean path' if none>"}.

@@ -1,0 +1,31 @@
+name: wix-export/export-named-site
+description: A user asks to get an existing Wix site into a local folder without naming a change; verifies the agent checks the CLI with one command, runs only the missing setup, exports into the site's own folder under wixsites, and ends by asking what to change instead of stopping at the export.
+triggerPrompt: I want to edit my Wix site "Bloom Florist" with code on my own computer. Get it into a local folder for me.
+tags: [wix-export]
+assertions:
+  - type: skill_was_called
+    skillNames: [wix-export]
+  - type: llm_judge
+    model: claude-sonnet-4-6
+    minScore: 7
+    prompt: |-
+      The user asked to get their existing Wix site "Bloom Florist" into a local folder, and named no change to make. The correct tool is the origami CLI (`@wix/origami-cli`). Judge what the agent did, from its commands and their real output, not from what it says it did.
+
+      Pass requires all of:
+      (1) Its first CLI step was `origami whoami`. It ran machine checks or the CLI install only when `origami` was not found, and `origami login` only when `whoami` printed no email or a later command reported a sign-in or authorization error. When `origami login` ran, it gave the user the URL and code it printed.
+      (2) If the CLI worked: it found the site with `origami sites | grep -iF -- '<name>'` (not by reading the full list), kept only an exact name match, and told the user in one line, before exporting, that the export adds a web OAuth app named `export site`.
+      (3) The export went to `<home>/wixsites/Bloom-Florist` (or `Bloom-Florist-2` and so on when that folder already held something else), written with the absolute home path and quoted, using the msid from the list: `origami export-site --site <msid> -o '<folder>' && cd '<folder>' && yarn install`. If that folder already held an export of this msid, it reused it instead of exporting again.
+      (4) After the export it read `<folder>/node_modules/@wix/origami-skills/skills/wix-site-edit/SKILL.md`, looked at the exported pages and theme, and asked the user what to change with 2–4 concrete options that fit this site. Ending with only "you can now ask me for changes" fails this point.
+      (5) If it could not get the site (registry unreachable, sign-in pending, or no single exact match), it stopped and told the user the exact next action: connect to the Wix network or VPN, finish signing in at the URL with the code, or pick the right site from the matches.
+
+      Score no higher than 3 if any of these happened: it claimed the site was exported without a successful `origami export-site` in the trace; it built, scaffolded or downloaded a site some other way (a new React/Vite/Next app, a Wix headless or app CLI, scraping the live site); it guessed or invented an msid; it ran `origami create-site` for this existing site; it exported outside `<home>/wixsites` with no folder named by the user; it ran `origami import-site` or published anything; it used `sudo`, or a registry other than https://npm.dev.wixpress.com/ for the CLI; it typed or asked for the user's password.
+
+      Score 0-10. Cite the commands behind your score.
+  - type: llm_judge
+    model: claude-sonnet-4-6
+    minScore: 7
+    prompt: |-
+      Rate how directly the agent moved through the export, from the tool-call trace. Score 0-10 (10 = direct: each command follows from the previous output, no wasted or repeated steps).
+      Penalize and LIST each of: machine checks or a CLI install run before `origami whoami` showed the CLI missing; Node, Corepack and the registry checked in separate commands; the CLI installed or updated more than once; `origami login` run while `whoami` printed an email; the full `origami sites` list read instead of narrowing it with `grep`; the export and `yarn install` run as separate steps; a quoting or `~` expansion error corrected by a retry; the export retried more than once; probing commands the flow does not need (searching npm for the package, `which`/`ls` of global folders, reading CLI source, `--help` exploration); waiting or polling in a loop for something only the user can do.
+      For each one, name the gap in the skill that would have avoided it.
+      Return ONLY {"score":<0-10>,"reason":"<terse list of frictions and the skill gap behind each, or 'clean path' if none>"}.
