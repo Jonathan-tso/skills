@@ -1,6 +1,6 @@
 ---
 name: wix-manage
-description: "REST recipes to configure and manage a Wix site's business solutions — stores, bookings, payments, CMS, and more. Open the matching recipe for the exact endpoint, method, and payload before calling — never guess a Wix API, never write Wix dashboard URL from memory. Routes to: automations, stores, bookings, get-paid, CMS, contacts, forms, media, app-installation, custom-apps, pricing-plans, restaurants, ricos rich-content, sites, blog, calendar, domains, events, site-properties, ecommerce, marketing, google-ads, google-business-profile, analytics, accessibility, seo, dashboard-navigation."
+description: "REST recipes to configure and manage a Wix site's business solutions — stores, bookings, payments, CMS, and more. Open the matching recipe for the exact endpoint, method, and payload before calling — never guess a Wix API, never write Wix dashboard URL from memory. Routes to: automations, stores, bookings, get-paid, CMS, contacts, forms, media, app-installation, custom-apps, pricing-plans, restaurants, ricos rich-content, sites, collaborators, blog, calendar, domains, events, site-properties, ecommerce, marketing, google-ads, google-business-profile, analytics, accessibility, seo, dashboard-navigation."
 compatibility: Requires Wix REST API access (API key or OAuth).
 ---
 
@@ -252,8 +252,11 @@ Routes discounts, coupons, sales and bundles to promotion recipes, and visual pr
 ### [Update Form](references/forms/update-form.md)
 "Changes a Wix form that already exists, with Form Schemas v4 `PATCH` — add a field to my form, add a dropdown, make a field required or optional, rename a label, reorder or retire a question. Covers reading the form back for its `revision` (and the required `namespace` query parameter), the whole-form body that a `PATCH` needs, the wholesale `formFields` replace that silently soft-deletes anything you omit, changing a field's component type in place, retiring a field that already has submissions, and the read-back that proves what was stored. Use whenever the form exists and the request changes what it collects; use Create Form when there is no form yet."
 
+### [Read Forms and Submissions](references/forms/read-forms-and-submissions.md)
+"Reads a site's Wix forms and the submissions visitors sent to them — what forms do I have, find a form by name, show the latest submissions, who filled in my contact form, how many submissions did I get last week, submissions from one contact, unread submissions. Covers finding the form's namespace instead of guessing it, where that namespace goes on each read, the Form Schemas and Form Submissions endpoints (and the look-alike URLs that 404), forms hidden from a default listing, the closed list of submission fields you can filter and sort by, date ranges, cursor paging, totals per form, and reading answers by field. Read-only; changing a form is Update Form, building one is Create Form."
+
 ### [Forms Dashboard Navigation](references/forms/forms-dashboard-navigation.md)
-"Builds direct links to Wix Forms dashboard pages on manage.wix.com. The paths are not guessable and appear in no API reference, so take them from here: under `https://manage.wix.com/dashboard/{metaSiteId}/`, the forms list is `wix-forms`, a form's builder is `wix-forms/form/{formId}`, and that form's submissions are `wix-forms/form/{formId}/submissions` — there is no site-wide submissions page, and nothing lives under `contacts/forms`, `forms`, `form-builder` or `wix-forms-and-payments` (the legacy app). Also standalone forms, and each Forms entity paired with its read API so you can fetch one and hand back a 'view it in your dashboard' link."
+"Builds direct links to Wix Forms dashboard pages on manage.wix.com. The paths are not guessable and appear in no API reference, so take them from here: under `https://manage.wix.com/dashboard/{metaSiteId}/`, the forms list is `wix-forms`, a form's builder is `wix-forms/form/{formId}`, and that form's submissions are `wix-forms/form/{formId}/submissions` — there is no site-wide submissions page, and nothing lives under `contacts/forms`, `forms`, `form-builder` or `wix-forms-and-payments` (the legacy app). Also standalone forms, and the dashboard link for each Forms entity; reading forms and submissions is Read Forms and Submissions."
 
 ---
 
@@ -390,13 +393,20 @@ Authoritative recipe for hand-authoring valid Ricos rich-content JSON (the richC
 
 ---
 
+## Collaborators
+
+### [Manage Site Collaborators](references/collaborators/manage-site-collaborators.md)
+Manages who has access to a Wix site as a collaborator (contributor) — finds the site's current collaborators, invites someone, removes a collaborator, and resends or revokes a pending collaborator invite. Use when the user wants to give someone access to the site, take it away, or follow up on an invitation that has not been accepted.
+
+---
+
 ## Sites
 
 ### [Create Site from Template](references/sites/create-site-from-template.md)
 Creates new Wix sites from templates using account-level APIs. Covers template search, site creation, and publishing. Not for headless sites.
 
 ### [Create Headless Site](references/sites/create-headless-site.md)
-Creates a Wix Headless website: a site in the user's Wix account whose frontend is files uploaded to Wix hosting, with the Wix business backend behind it through APIs. Creating, uploading, updating and connecting a backend are one flow, in Upload a Website or HTML Files.
+Creates a Wix Headless website: a site in the user's Wix account whose frontend is files uploaded to Wix hosting, with the Wix business backend behind it through APIs. The site is created and its pages put live by Upload a Website or HTML Files; a Wix Business Solution (a store, blog, bookings and more) is then integrated into it by the Wix Headless kit, from its cold start.
 
 ### [Manage OAuth Apps](references/sites/manage-oauth-apps.md)
 Create, read, update, and query OAuth apps for a Wix headless site. Each OAuth app's id is the client_id a frontend uses to mint anonymous visitor tokens and call Wix APIs.
@@ -417,7 +427,7 @@ Drive the Wix Site Import agent to migrate an existing store or site from anothe
 "Builds direct links to the account-level sites pages on manage.wix.com — the My Sites list (all sites in the account) and each site's own dashboard. Pairs the site list with the Query Sites read API. Use when the user asks where something is in the Wix dashboard, wants a direct link to a dashboard page, or you need a dashboard URL to include with the result of an API operation."
 
 ### [Upload a Website or HTML Files](references/sites/upload-static-site.md)
-Create and update a Wix Headless website by uploading its files — an index.html, a static build, a zip exported from an AI builder or any other tool, or pages you write for the user — as a live site in the user's Wix account. Covers every route: uploading with the user's identity (curl with a Wix CLI token, or the Wix MCP), publishing anonymously with a save link when you don't hold it, and the Wix Headless drop page; then updating the same site and URL, and connecting a Wix backend (stores, bookings, forms) through the headless skill. Use when the user wants to upload, publish, deploy or host HTML/CSS/JS as a new Wix site, their own or written for them, or to change a site published this way. Not for migrating a live store/site from another platform by URL or from CSV exports (use Site Import), not for adding HTML or custom code into an existing Wix site, and not for uploading images or documents to a site's media files.
+Publish HTML, CSS, JavaScript or a static build as a Wix Headless website; inspect its deployed files and edit them on the same site and URL. Covers file and ZIP uploads, selective additions, replacements and deletions while preserving other files, full-site replacement, authenticated and anonymous publishing, verification, and connecting a Wix business backend. Use for files the user supplies or pages you create for them. Not for migrating a live site from another platform by URL or CSV (use Site Import), embedding code in an editor-built Wix site, or uploading assets to Media Manager.
 
 ---
 
